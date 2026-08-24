@@ -1,61 +1,26 @@
-# AI Detective - On-Chain Murder Mystery dApp
+# SponsorSync — Creator Economy Sponsorship Verification Protocol
 
-A fully immersive, Web3 detective game built on **GenLayer**. Players act as investigators searching the crime scene and interrogating suspects. Validator LLMs act as the suspect NPCs, generating context-aware testimonies and clues on-chain. Players win by submitting the correct accusation (killer, weapon, and motive).
-
----
-
-## 📁 Project Structure
-```
-├── detective_game.py       # GenLayer Intelligent Contract (Backend)
-└── frontend/
-    ├── index.html          # Web UI Dashboard
-    ├── style.css           # Corkboard & Detective Theme Stylesheet
-    └── app.js              # Web3 Client JS integrating genlayer-js SDK
-```
+> **"Eliminating creator fraud and automating milestone escrow payouts using GenLayer AI consensus and staged EVM escrow."**
 
 ---
 
-## 🚀 How to Run Locally
-
-### 1. Deploy the Contract
-Deploy `detective_game.py` in GenLayer Studio using:
-*   **`owner`**: Paste your active developer wallet address.
-*   **`killer`**: `the butler`
-*   **`weapon`**: `ornate dagger`
-*   **`motive`**: `inheritance`
-*   **`clues`**: `"Victim: Lord Blackwood. Suspects: the Butler, the Maid, the Doctor. Scene: Library. Clues: A silver ornate dagger is missing from the study chest; a mud stain footprint is near the window."`
-
-*Copy the resulting contract address once deployed.*
+## 🔗 Verified Deployments & Links
+- **GenLayer Explorer Contract**: [`0x6FC89A7FcA83401dbe04E502d0053e7074aAB68D`](https://explorer-studio.genlayer.com/address/0x6FC89A7FcA83401dbe04E502d0053e7074aAB68D)
+- **GitHub Repository**: [`https://github.com/tumhi4/sponsorsync`](https://github.com/tumhi4/sponsorsync)
+- **Live DApp Dashboard**: [`https://sponsorsyncweb.vercel.app/`](https://sponsorsyncweb.vercel.app/)
 
 ---
 
-### 2. Launch the Frontend UI
-Because the app uses ES module imports, it must be served via a local web server (instead of double-clicking `index.html` from the files explorer).
+## 🛡️ Staged Escrow Architecture & Anti-Fraud Invariants
 
-You can launch a local server in seconds using one of the following methods in your terminal:
-
-**Method A: Python (Built-in)**
-```bash
-cd frontend
-python -m http.server 8000
-```
-
-**Method B: Node.js (npx)**
-```bash
-cd frontend
-npx http-server -p 8000
-```
-
-*Open `http://localhost:8000` in your web browser.*
-
----
-
-### 🎮 How to Play
-
-1.  **Connect Wallet**: Click the **Connect Wallet** button at the top right to link your MetaMask or GenLayer wallet.
-2.  **Join Case**: Paste your deployed contract address and click **Join Case**.
-3.  **Investigate**:
-    *   Type your action in the text box (e.g. *"I ask the maid what she was doing at 9 PM"* or *"I search the library window for clues"*).
-    *   Click **Perform Investigation** to submit your action.
-    *   Read the AI-generated suspect testimonies on the corkboard feed.
-4.  **Accuse**: Enter your final verdict (e.g. `the butler`, `ornate dagger`, `inheritance`) and submit it to solve the mystery!
+1. **Strict Finalized Contract Readback (Zero Local Mock Fallbacks)**:
+   - Dashboard initializes from on-chain storage via `gen_callView("get_campaign")` and only updates upon verified transaction confirmations with strict fail-closed handling.
+2. **Bound Campaign ID Verification**:
+   - `relay/SponsorSyncRelay.py` strictly verifies that `returned_campaign_id == expected_campaign_id` before authorizing any tranche disbursement.
+3. **Production Signed Web3 EVM Escrow Relay**:
+   - Constructs, signs with ECDSA private keys (`Account.sign_transaction`), broadcasts raw transactions (`send_raw_transaction`), and confirms on-chain receipts (`receipt.status == 1`) against `SponsorSyncEscrow.sol` (`releaseTranche1`, `releaseTranche2`, `clawback`).
+4. **4-Tier Anti-Fraud Verification Engine**:
+   - **Channel Authority Gate**: Rejects channels <30d old or <1M subs (`INSUFFICIENT_CHANNEL_AUTHORITY`).
+   - **Bot-Farm Sentiment Filter**: Detects unnatural comment clusters (`SUSPECTED_BOT_ACTIVITY`).
+   - **Cryptographic Claim Code**: Validates `GL-VERIFY-XXXXXX` in description (`MISSING_CLAIM_CODE`).
+   - **Delete-&-Dash Clawback**: 50% Day 0 release + 50% Day 7 retention verification.

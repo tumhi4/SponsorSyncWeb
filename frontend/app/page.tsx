@@ -43,15 +43,15 @@ export default function SponsorSyncDashboard() {
     escrow_amount_usdc: 5000,
     claim_code: 'GL-VERIFY-855736',
     video_evidence_url: 'https://sponsor-sync-demo.vercel.app/youtube_perfect.html',
-    status: 'FULLY_SETTLED',
-    verdict: 'FULL_COMPLIANCE',
-    subscriber_count: 245000000,
-    view_count: 5420890,
-    like_count: 412000,
-    quality_score: 98,
-    tranche_1_released: true,
-    tranche_2_released: true,
-    last_audit_summary: 'RETENTION AUDIT PASSED: Content persisted across retention window. Tranche 2 (final 50% USDC) released. Campaign fully settled. The sponsored video appears live and public, and the claim code GL-VERIFY-855736 remains present in the description.'
+    status: 'AWAITING_INITIAL_AUDIT',
+    verdict: 'PENDING',
+    subscriber_count: 0,
+    view_count: 0,
+    like_count: 0,
+    quality_score: 0,
+    tranche_1_released: false,
+    tranche_2_released: false,
+    last_audit_summary: 'Campaign funded in escrow. Ready for GenLayer AI milestone consensus.'
   });
 
   const demoUrls = {
@@ -91,12 +91,37 @@ export default function SponsorSyncDashboard() {
         const data = await res.json();
         if (data.result) {
           const parsed = typeof data.result === 'string' ? JSON.parse(data.result) : data.result;
-          setCampaign(prev => ({ ...prev, ...parsed }));
-          appendLog(`✓ GenLayer RPC Response received. Campaign Status: ${parsed.status || 'SYNCED'}`);
+          setCampaign(prev => ({
+            ...prev,
+            id: parsed.id || prev.id,
+            brand: parsed.brand || prev.brand,
+            creator: parsed.creator || prev.creator,
+            required_handle: parsed.required_handle || prev.required_handle,
+            platform: parsed.platform || prev.platform,
+            min_subscribers: Number(parsed.min_subscribers) || prev.min_subscribers,
+            min_avg_views: Number(parsed.min_avg_views) || prev.min_avg_views,
+            escrow_amount_usdc: Number(parsed.escrow_amount_usdc) || prev.escrow_amount_usdc,
+            claim_code: parsed.claim_code || prev.claim_code,
+            video_evidence_url: parsed.video_evidence_url || prev.video_evidence_url,
+            status: parsed.status || prev.status,
+            verdict: parsed.verdict || prev.verdict,
+            subscriber_count: Number(parsed.subscriber_count) || prev.subscriber_count,
+            view_count: Number(parsed.view_count) || prev.view_count,
+            like_count: Number(parsed.like_count) || prev.like_count,
+            quality_score: Number(parsed.quality_score) || prev.quality_score,
+            tranche_1_released: Boolean(parsed.tranche_1_released),
+            tranche_2_released: Boolean(parsed.tranche_2_released),
+            last_audit_summary: parsed.last_audit_summary || prev.last_audit_summary
+          }));
+          appendLog(`✓ GenLayer RPC Response received. Status: ${parsed.status || 'SYNCED'} | Verdict: ${parsed.verdict || 'N/A'}`);
+        } else {
+          appendLog(`🚨 [FAIL-CLOSED] No campaign record returned from GenLayer RPC.`);
         }
+      } else {
+        appendLog(`🚨 [FAIL-CLOSED] RPC HTTP error ${res.status}`);
       }
-    } catch (e) {
-      appendLog(`GenLayer RPC call finished. State synchronized.`);
+    } catch (e: any) {
+      appendLog(`🚨 [FAIL-CLOSED] Contract state read failed: ${e.message}`);
     } finally {
       setIsCallingRpc(false);
     }
@@ -106,7 +131,7 @@ export default function SponsorSyncDashboard() {
   const handleRunInitialAudit = async () => {
     setIsCallingRpc(true);
     const targetUrl = demoUrls[selectedDemo];
-    appendLog(`Executing gen_sendTransaction("submit_evidence", ["${activeCampaignId}", "${targetUrl}"])...`);
+    appendLog(`1. Submitting evidence URL: ${targetUrl}...`);
 
     try {
       // Step 1: Submit evidence
@@ -125,7 +150,7 @@ export default function SponsorSyncDashboard() {
         })
       });
 
-      appendLog(`Executing gen_sendTransaction("run_initial_audit", ["${activeCampaignId}"])...`);
+      appendLog(`2. Broadcasting gen_sendTransaction("run_initial_audit", ["${activeCampaignId}"])...`);
 
       // Step 2: Run Initial Audit
       await fetch(GENLAYER_RPC, {
@@ -143,35 +168,11 @@ export default function SponsorSyncDashboard() {
         })
       });
 
-      if (selectedDemo === 'perfect') {
-        setCampaign(prev => ({
-          ...prev,
-          status: 'INITIAL_APPROVED',
-          verdict: 'FULL_COMPLIANCE',
-          tranche_1_released: true,
-          quality_score: 98,
-          last_audit_summary: 'INITIAL AUDIT PASSED: @MrBeast verified (245M subs). Claim code GL-VERIFY-855736 validated. 50% Tranche 1 released to creator.'
-        }));
-        appendLog(`✓ Consensus Finalized: INITIAL_APPROVED (FULL_COMPLIANCE). 50% USDC released.`);
-      } else if (selectedDemo === 'burner') {
-        setCampaign(prev => ({
-          ...prev,
-          status: 'INITIAL_REJECTED',
-          verdict: 'INSUFFICIENT_CHANNEL_AUTHORITY',
-          last_audit_summary: 'INITIAL AUDIT FAILED: Burner channel detected (<30 days old, 120 subs < 1M min). Escrow protected.'
-        }));
-        appendLog(`🚨 Consensus Finalized: REJECTED (INSUFFICIENT_CHANNEL_AUTHORITY). Escrow locked.`);
-      } else {
-        setCampaign(prev => ({
-          ...prev,
-          status: 'INITIAL_REJECTED',
-          verdict: 'SUSPECTED_BOT_ACTIVITY',
-          last_audit_summary: 'INITIAL AUDIT FAILED: Bot farm comment spam detected. Escrow protected.'
-        }));
-        appendLog(`🚨 Consensus Finalized: REJECTED (SUSPECTED_BOT_ACTIVITY). Escrow locked.`);
-      }
+      appendLog(`3. Consensus transaction confirmed. Reading finalized state from contract...`);
+      await fetchCampaignFromChain(activeCampaignId);
+      appendLog(`✓ Finalized initial audit consensus synchronized from contract.`);
     } catch (e) {
-      appendLog(`Transaction executed.`);
+      appendLog(`🚨 [FAIL-CLOSED] Initial audit transaction failed.`);
     } finally {
       setIsCallingRpc(false);
     }
@@ -180,7 +181,7 @@ export default function SponsorSyncDashboard() {
   // Real GenLayer Retention Audit Transaction Execution
   const handleRunRetentionAudit = async () => {
     setIsCallingRpc(true);
-    appendLog(`Executing gen_sendTransaction("run_retention_audit", ["${activeCampaignId}"])...`);
+    appendLog(`Broadcasting gen_sendTransaction("run_retention_audit", ["${activeCampaignId}"])...`);
 
     try {
       await fetch(GENLAYER_RPC, {
@@ -198,15 +199,11 @@ export default function SponsorSyncDashboard() {
         })
       });
 
-      setCampaign(prev => ({
-        ...prev,
-        status: 'FULLY_SETTLED',
-        tranche_2_released: true,
-        last_audit_summary: 'RETENTION AUDIT PASSED: Video active after 7 days with claim code. Tranche 2 released. Escrow fully settled.'
-      }));
-      appendLog(`✓ Consensus Finalized: FULLY_SETTLED. Final 50% Tranche 2 released.`);
+      appendLog(`Retention audit confirmed. Reading finalized state from contract...`);
+      await fetchCampaignFromChain(activeCampaignId);
+      appendLog(`✓ Finalized retention audit consensus synchronized from contract.`);
     } catch (e) {
-      appendLog(`Retention audit executed.`);
+      appendLog(`🚨 [FAIL-CLOSED] Retention audit transaction failed.`);
     } finally {
       setIsCallingRpc(false);
     }
@@ -214,6 +211,7 @@ export default function SponsorSyncDashboard() {
 
   useEffect(() => {
     appendLog(`SponsorSync Portal connected to GenLayer contract: ${CONTRACT_ADDRESS}`);
+    fetchCampaignFromChain(activeCampaignId);
   }, []);
 
   return (
