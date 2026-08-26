@@ -21,7 +21,7 @@ import {
   Play
 } from 'lucide-react';
 
-const CONTRACT_ADDRESS = '0x36e2Bf70C68976D7c3bfB66BeFD092B68b24Ab0A';
+const CONTRACT_ADDRESS = '0x9b218F5e488697fE185E5f78E16466e26E106644';
 const GENLAYER_RPC = 'https://studio.genlayer.com/api';
 
 export default function SponsorSyncDashboard() {
@@ -29,11 +29,11 @@ export default function SponsorSyncDashboard() {
   const [selectedDemo, setSelectedDemo] = useState<'perfect' | 'burner' | 'botfarm'>('perfect');
   const [isCallingRpc, setIsCallingRpc] = useState<boolean>(false);
   const [rpcLogs, setRpcLogs] = useState<string[]>([]);
-  const [activeCampaignId, setActiveCampaignId] = useState('SPONSOR_CAMPAIGN_002');
+  const [activeCampaignId, setActiveCampaignId] = useState('SPONSOR_CAMPAIGN_001');
 
   // Real Campaign State synced with Contract
   const [campaign, setCampaign] = useState({
-    id: 'SPONSOR_CAMPAIGN_002',
+    id: 'SPONSOR_CAMPAIGN_001',
     brand: '0x71546f55c131acd54cf93e181b9cabaeaf440fc3',
     creator: '0x71546f55c131acd54cf93e181b9cabaeaf440fc3',
     required_handle: '@MrBeast',
@@ -41,7 +41,7 @@ export default function SponsorSyncDashboard() {
     min_subscribers: 1000000,
     min_avg_views: 500000,
     escrow_amount_usdc: 5000,
-    claim_code: 'GL-VERIFY-855736',
+    claim_code: 'GL-VERIFY-8F3K2',
     video_evidence_url: 'https://sponsor-sync-demo.vercel.app/youtube_perfect.html',
     status: 'AWAITING_INITIAL_AUDIT',
     verdict: 'PENDING',
