@@ -21,7 +21,7 @@ import {
   Play
 } from 'lucide-react';
 
-const CONTRACT_ADDRESS = '0x6FC89A7FcA83401dbe04E502d0053e7074aAB68D';
+const CONTRACT_ADDRESS = '0x36e2Bf70C68976D7c3bfB66BeFD092B68b24Ab0A';
 const GENLAYER_RPC = 'https://studio.genlayer.com/api';
 
 export default function SponsorSyncDashboard() {
@@ -289,14 +289,34 @@ export default function SponsorSyncDashboard() {
               </div>
               <div className="bg-[#0c1424] p-5 rounded-xl border border-slate-800 space-y-1">
                 <span className="text-xs text-slate-400">Tranche 1 (Day 0 - 50%)</span>
-                <div className="text-xl font-bold flex items-center gap-1.5 text-emerald-400">
-                  <CheckCircle2 className="w-4 h-4" /> Released ($2,500)
+                <div className={`text-xl font-bold flex items-center gap-1.5 ${
+                  campaign.tranche_1_released ? 'text-emerald-400' : 'text-slate-500'
+                }`}>
+                  {campaign.tranche_1_released ? <CheckCircle2 className="w-4 h-4" /> : <Clock className="w-4 h-4" />}
+                  {campaign.tranche_1_released ? `Released ($${(campaign.escrow_amount_usdc / 2).toLocaleString()})` : 'Pending'}
                 </div>
               </div>
               <div className="bg-[#0c1424] p-5 rounded-xl border border-slate-800 space-y-1">
-                <span className="text-xs text-slate-400">Tranche 2 (Day 7 - 50%)</span>
-                <div className="text-xl font-bold flex items-center gap-1.5 text-emerald-400">
-                  <CheckCircle2 className="w-4 h-4" /> Released ($2,500)
+                <span className="text-xs text-slate-400">Tranche 2 (Retention - 50%)</span>
+                <div className={`text-xl font-bold flex items-center gap-1.5 ${
+                  campaign.status === 'CLAWBACK_TRIGGERED' || campaign.status === 'CLAWED_BACK'
+                    ? 'text-rose-400'
+                    : campaign.tranche_2_released
+                    ? 'text-emerald-400'
+                    : 'text-amber-400'
+                }`}>
+                  {campaign.status === 'CLAWBACK_TRIGGERED' || campaign.status === 'CLAWED_BACK' ? (
+                    <AlertTriangle className="w-4 h-4 text-rose-400" />
+                  ) : campaign.tranche_2_released ? (
+                    <CheckCircle2 className="w-4 h-4 text-emerald-400" />
+                  ) : (
+                    <Clock className="w-4 h-4 text-amber-400" />
+                  )}
+                  {campaign.status === 'CLAWBACK_TRIGGERED' || campaign.status === 'CLAWED_BACK'
+                    ? `Clawed Back ($${(campaign.escrow_amount_usdc / 2).toLocaleString()})`
+                    : campaign.tranche_2_released
+                    ? `Released ($${(campaign.escrow_amount_usdc / 2).toLocaleString()})`
+                    : 'Locked in Escrow'}
                 </div>
               </div>
               <div className="bg-[#0c1424] p-5 rounded-xl border border-slate-800 space-y-1">
