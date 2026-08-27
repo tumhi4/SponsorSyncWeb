@@ -21,7 +21,7 @@ import {
   Play
 } from 'lucide-react';
 
-const CONTRACT_ADDRESS = '0x9b218F5e488697fE185E5f78E16466e26E106644';
+const CONTRACT_ADDRESS = '0xE4C145a7a4886e4C3746921665B76298e6eB3927';
 const GENLAYER_RPC = 'https://studio.genlayer.com/api';
 
 export default function SponsorSyncDashboard() {
